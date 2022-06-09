@@ -301,11 +301,11 @@ def computeRGBImage(red, green, blue, image_width, image_height):
     for i in range(image_height):
         row = []
         for j in range(image_width):
-            all = []
-            all.append(red[i][j])
-            all.append(green[i][j])
-            all.append(blue[i][j])
-            row.append(all)
+            temp = []
+            temp.append(red[i][j])
+            temp.append(green[i][j])
+            temp.append(blue[i][j])
+            row.append(temp)
         rgb.append(row)
     return rgb
 
