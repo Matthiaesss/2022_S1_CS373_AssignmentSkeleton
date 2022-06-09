@@ -1,1 +1,4 @@
 matplotlib
+pytesseract (Needs to be installed on system)
+
+
