@@ -49,19 +49,27 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     return new_array
 
 
-
+# Compute histogram function
 def computeHistogram(pixel_array, image_width, image_height, nr_bins):
+    pixelArrayList = []
+    countList = [0, 0, 0, 0, 0, 0, 0, 0]
+    count = 0
+    for i in range(image_height):
+        for j in range(image_width):
+            if pixel_array[i][j] not in pixelArrayList:
+                pixelArrayList.append(pixel_array[i][j])
 
-    histogram = [0.0 for i in range(nr_bins)]
+    pixelArrayList = sorted(pixelArrayList)
 
-    # your task to compute the correct histogram!
+    for x in range(len(pixelArrayList)):
+        for i in range(image_height):
+            for j in range(image_width):
+                if pixel_array[i][j] == pixelArrayList[x]:
+                    count += 1
+        countList[x] = count
+        count = 0
 
-    # incorrect histogram
-    histogram[0] = 10
-    histogram[32] = 15
-    histogram[63] = 10
-
-    return histogram
+    return [float(x) for x in countList]
 
 
 def main():

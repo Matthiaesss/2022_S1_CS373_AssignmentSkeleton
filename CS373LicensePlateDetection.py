@@ -54,6 +54,278 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
+# Convert RGB to greyscale
+def computeRGBToGreyscale(pixel_array_r, pixel_array_g, pixel_array_b, image_width, image_height):
+    greyscale_pixel_array = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    for i in range(image_height):
+        for j in range(image_width):
+            greyscale_pixel_array[i][j] = round(
+                (0.299 * pixel_array_r[i][j]) + (0.587 * pixel_array_g[i][j]) + (0.114 * pixel_array_b[i][j]))
+
+    return greyscale_pixel_array
+
+# Compute Standard Deviation of pixel in neighbourhood 5x5
+def computeStandardDeviationImage5x5(pixel_array, image_width, image_height):
+    greyScale = createInitializedGreyscalePixelArray(image_width, image_height)
+    tempList = []
+    mean = 0
+    adding = 0
+    for i in range(image_height):
+        for j in range(image_width):
+            if i == 0 or j == 0 or i == image_height - 1 or j == image_width - 1:
+                continue
+            else:
+                if i - 2 >= 0 and j - 2 >= 0:
+                    tempList.append(pixel_array[i - 2][j - 2])
+                if i - 2 >= 0 and j - 1 >= 0:
+                    tempList.append(pixel_array[i - 2][j - 1])
+                if i - 2 >= 0:
+                    tempList.append(pixel_array[i - 2][j])
+                if i - 2 >= 0 and j + 1 <= image_width - 1:
+                    tempList.append(pixel_array[i - 2][j + 1])
+                if i - 2 >= 0 and j + 2 <= image_width - 1:
+                    tempList.append(pixel_array[i - 2][j + 2])
+
+                if i - 1 >= 0 and j - 2 >= 0:
+                    tempList.append(pixel_array[i - 1][j - 2])
+                if i - 1 >= 0 and j - 1 >= 0:
+                    tempList.append(pixel_array[i - 1][j - 1])
+                if i - 1 >= 0:
+                    tempList.append(pixel_array[i - 1][j])
+                if i - 1 >= 0 and j + 1 <= image_width - 1:
+                    tempList.append(pixel_array[i - 1][j + 1])
+                if i - 1 >= 0 and j + 2 <= image_width - 1:
+                    tempList.append(pixel_array[i - 1][j + 2])
+
+                if j - 2 >= 0:
+                    tempList.append(pixel_array[i][j - 2])
+                if j - 1 >= 0:
+                    tempList.append(pixel_array[i][j - 1])
+                tempList.append(pixel_array[i][j])
+                if j + 1 <= image_width - 1:
+                    tempList.append(pixel_array[i][j + 1])
+                if j + 2 <= image_width - 1:
+                    tempList.append(pixel_array[i][j + 2])
+
+                if i + 1 <= image_height - 1 and j - 2 >= 0:
+                    tempList.append(pixel_array[i + 1][j - 2])
+                if i + 1 <= image_height - 1 and j - 1 >= 0:
+                    tempList.append(pixel_array[i + 1][j - 1])
+                if i + 1 <= image_height - 1:
+                    tempList.append(pixel_array[i + 1][j])
+                if i + 1 <= image_height - 1 and j + 1 <= image_width - 1:
+                    tempList.append(pixel_array[i + 1][j + 1])
+                if i + 1 <= image_height - 1 and j + 2 <= image_width - 1:
+                    tempList.append(pixel_array[i + 1][j + 2])
+
+                if i + 2 <= image_height - 1 and j - 2 >= 0:
+                    tempList.append(pixel_array[i + 2][j - 2])
+                if i + 2 <= image_height - 1 and j - 1 >= 0:
+                    tempList.append(pixel_array[i + 2][j - 1])
+                if i + 2 <= image_height - 1:
+                    tempList.append(pixel_array[i + 2][j])
+                if i + 2 <= image_height - 1 and j + 1 <= image_width - 1:
+                    tempList.append(pixel_array[i + 2][j + 1])
+                if i + 2 <= image_height - 1 and j + 2 <= image_width - 1:
+                    tempList.append(pixel_array[i + 2][j + 2])
+
+                for x in tempList:
+                    mean += x
+
+                mean = float(mean) / 25
+
+                for y in tempList:
+                    adding += (y - mean) ** 2
+
+                adding = adding / len(tempList)
+                greyScale[i][j] = math.sqrt(adding)
+                mean = 0
+                adding = 0
+                tempList = []
+
+    return greyScale
+
+# Compute minimum and maximum values in pixel array
+def computeMinAndMaxValues(pixel_array, image_width, image_height):
+    minimum = pixel_array[0][0]
+    maximum = pixel_array[0][0]
+
+    for i in range(image_height):
+        for j in range(image_width):
+            if pixel_array[i][j] < minimum:
+                minimum = pixel_array[i][j]
+            if pixel_array[i][j] > maximum:
+                maximum = pixel_array[i][j]
+
+    return (minimum, maximum)
+
+# Contrast stretching
+def scaleTo0And255AndQuantize(pixel_array, image_width, image_height):
+    greyscalePixelArray = createInitializedGreyscalePixelArray(image_width, image_height)
+    minAndMax = computeMinAndMaxValues(pixel_array, image_width, image_height)
+    num = 0
+
+    for i in range(image_height):
+        for j in range(image_width):
+            if minAndMax[1] - minAndMax[0] != 0:
+                num = round((pixel_array[i][j] - minAndMax[0]) * (255 / (minAndMax[1] - minAndMax[0])))
+            else:
+                num = 0
+            greyscalePixelArray[i][j] = num
+
+    return greyscalePixelArray
+
+# Compute threshold
+def computeThresholdGE(pixel_array, threshold, image_width, image_height):
+    for i in range(image_height):
+        for j in range(image_width):
+            if pixel_array[i][j] < threshold:
+                pixel_array[i][j] = 0
+            else:
+                pixel_array[i][j] = 255
+
+    return pixel_array
+
+# Compute erosion 3x3
+def computeErosion8Nbh3x3FlatSE(pixel_array, image_width, image_height):
+    greyScale = createInitializedGreyscalePixelArray(image_width, image_height)
+    tempList = []
+    for i in range(1, image_height - 1):
+        for j in range(1, image_width - 1):
+            if pixel_array[i - 1][j - 1] > 0:
+                if pixel_array[i - 1][j] > 0:
+                    if pixel_array[i - 1][j + 1] > 0:
+                        if pixel_array[i][j - 1] > 0:
+                            if pixel_array[i][j] > 0:
+                                if pixel_array[i][j + 1] > 0:
+                                    if pixel_array[i + 1][j - 1] > 0:
+                                        if pixel_array[i + 1][j] > 0:
+                                            if pixel_array[i + 1][j + 1] > 0:
+                                                greyScale[i][j] = 1
+            else:
+                greyScale[i][j] = 0
+
+    return greyScale
+
+# Compute dilation 3x3
+def computeDilation8Nbh3x3FlatSE(pixel_array, image_width, image_height):
+    greyScale = createInitializedGreyscalePixelArray(image_width, image_height)
+    for i in range(image_height):
+        for j in range(image_width):
+            if pixel_array[i][j] > 0:
+                for eta in [-1, 0, 1]:
+                    for j1 in [-1, 0, 1]:
+                        if (i + eta < image_height) and (i + eta >= 0):
+                            if (j + j1 < image_width) and (j + j1 >= 0):
+                                greyScale[i + eta][j + j1] = 1
+
+    return greyScale
+
+# Compute connected component labeling
+def computeConnectedComponentLabeling(pixel_array, image_width, image_height):
+    label = 1
+    greyScale = createInitializedGreyscalePixelArray(image_width, image_height, 0)
+    visited = createInitializedGreyscalePixelArray(image_width, image_height, 0)
+    dictionary = {}
+    for i in range(image_height):
+        for j in range(image_width):
+            if visited[i][j] == 0 and pixel_array[i][j] > 0:
+                q = Queue()
+                q.enqueue((i, j))
+                dictionary[label] = 0
+                visited[i][j] = 1
+                while q.isEmpty() == False:
+                    location = q.dequeue()
+                    row = location[0]
+                    col = location[1]
+                    greyScale[row][col] = label
+                    dictionary[label] += 1
+
+                    left = pixel_array[row][col - 1]
+                    right = pixel_array[row][col + 1]
+                    top = pixel_array[row - 1][col]
+                    bottom = pixel_array[row + 1][col]
+
+                    if row < image_height and col - 1 < image_width and left > 0 and visited[row][col - 1] == 0:
+                        q.enqueue((row, col - 1))
+                        visited[row][col - 1] = 1
+                        greyScale[row][col - 1] = label
+
+                    if row < image_height and col + 1 < image_width and right > 0 and visited[row][col + 1] == 0:
+                        q.enqueue((row, col + 1))
+                        visited[row][col + 1] = 1
+                        greyScale[row][col + 1] = label
+
+                    if row - 1 < image_height and col < image_width and top > 0 and visited[row - 1][col] == 0:
+                        q.enqueue((row - 1, col))
+                        visited[row - 1][col] = 1
+                        greyScale[row - 1][col] = label
+
+                    if row + 1 < image_height and col < image_width and bottom > 0 and visited[row + 1][col] == 0:
+                        q.enqueue((row + 1, col))
+                        visited[row + 1][col] = 1
+                        greyScale[row + 1][col] = label
+                label += 1
+            else:
+                continue
+
+    largest = 0
+    group = 0
+    topLeft = [0, 9999]
+    botRight = [9999, 0]
+
+    for key, value in dictionary.items():
+        if value > largest:
+            largest = value
+            group = key
+
+    for i in range(image_height):
+        for j in range(image_width):
+            if greyScale[i][j] == group:
+                if i > topLeft[0]:
+                    topLeft[0] = i
+                if i < botRight[0]:
+                    botRight[0] = i
+                if j < topLeft[1]:
+                    topLeft[1] = j
+                if j > botRight[1]:
+                    botRight[1] = j
+
+    return [topLeft, botRight]
+
+
+# Combine red, green, and blue arrays into one pixel array
+def computeRGBImage(red, green, blue, image_width, image_height):
+    rgb = []
+    for i in range(image_height):
+        row = []
+        for j in range(image_width):
+            all = []
+            all.append(red[i][j])
+            all.append(green[i][j])
+            all.append(blue[i][j])
+            row.append(all)
+        rgb.append(row)
+    return rgb
+
+
+# Queue class for computeConnectedComponentLabeling() function
+class Queue:
+    def __init__(self):
+        self.items = []
+
+    def isEmpty(self):
+        return self.items == []
+
+    def enqueue(self, item):
+        self.items.insert(0,item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def size(self):
+        return len(self.items)
 
 
 # This is our code skeleton that performs the license plate detection.
@@ -66,7 +338,7 @@ def main():
     SHOW_DEBUG_FIGURES = True
 
     # this is the default input image filename
-    input_filename = "numberplate1.png"
+    input_filename = "numberplate5.png"
 
     if command_line_arguments != []:
         input_filename = command_line_arguments[0]
@@ -98,17 +370,39 @@ def main():
 
     # STUDENT IMPLEMENTATION here
 
-    px_array = px_array_r
+    # RGB to greyscale
+    px_array = computeRGBToGreyscale(px_array_r, px_array_g, px_array_b, image_width, image_height)
 
-    # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
-    center_x = image_width / 2.0
-    center_y = image_height / 2.0
-    bbox_min_x = center_x - image_width / 4.0
-    bbox_max_x = center_x + image_width / 4.0
-    bbox_min_y = center_y - image_height / 4.0
-    bbox_max_y = center_y + image_height / 4.0
+    # High contrast standard deviation
+    px_array = computeStandardDeviationImage5x5(px_array, image_width, image_height)
 
+    # Contrast stretching
+    px_array = scaleTo0And255AndQuantize(px_array, image_width, image_height)
 
+    # High contrast binary image
+    px_array = computeThresholdGE(px_array, 143, image_width, image_height)
+
+    # Dilate image
+    px_array = computeDilation8Nbh3x3FlatSE(px_array, image_width, image_height)
+    px_array = computeDilation8Nbh3x3FlatSE(px_array, image_width, image_height)
+    px_array = computeDilation8Nbh3x3FlatSE(px_array, image_width, image_height)
+
+    # Errode image
+    px_array = computeErosion8Nbh3x3FlatSE(px_array, image_width, image_height)
+    px_array = computeErosion8Nbh3x3FlatSE(px_array, image_width, image_height)
+    px_array = computeErosion8Nbh3x3FlatSE(px_array, image_width, image_height)
+
+    # Connected component labeling
+    box = computeConnectedComponentLabeling(px_array, image_width, image_height)
+
+    # Combine red, green, and blue pixel arrays to output
+    px_array = computeRGBImage(px_array_r, px_array_g, px_array_b, image_width, image_height)
+
+    # Compute the bounding box for license plate
+    bbox_min_x = box[0][1]
+    bbox_max_x = box[1][1]
+    bbox_min_y = box[1][0]
+    bbox_max_y = box[0][0]
 
 
 
